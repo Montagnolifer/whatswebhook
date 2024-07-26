@@ -2,6 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 const bodyParser = require('body-parser');
+const { execSync } = require('child_process');
 
 const app = express();
 app.use(bodyParser.json());
@@ -9,7 +10,10 @@ app.use(bodyParser.json());
 console.log("Inicializando cliente...");
 
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        executablePath: execSync('which chromium-browser').toString().trim()
+    }
 });
 
 client.on('qr', qr => {
