@@ -2,7 +2,6 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 const bodyParser = require('body-parser');
-const { execSync } = require('child_process');
 
 const app = express();
 app.use(bodyParser.json());
@@ -12,7 +11,9 @@ console.log("Inicializando cliente...");
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        executablePath: execSync('which chromium-browser').toString().trim()
+        headless: true,
+        executablePath: '/usr/bin/chromium-browser',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
@@ -35,11 +36,13 @@ client.on('authenticated', () => {
 });
 
 client.on('message', message => {
-    //console.log('Mensagem recebida:', message.body);
+    console.log('Mensagem recebida:', message.body);
 });
 
 client.on('disconnected', (reason) => {
     console.log('Cliente desconectado', reason);
+    // Tentar reconectar em caso de desconexão
+    client.initialize();
 });
 
 client.initialize();
@@ -58,6 +61,7 @@ app.post('/send-message', async (req, res) => {
         await client.sendMessage(formattedNumber, `${message}`);
         res.status(200).send({ status: 'success', message: 'Mensagem enviada com sucesso' });
     } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
         res.status(500).send({ status: 'error', message: 'Erro ao enviar mensagem', error: error.message });
     }
 });
